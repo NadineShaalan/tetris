@@ -345,7 +345,6 @@
                     (make-block 5 7 'blue)))
               
 ;;; ---- Collision Detection ----
-
 ;;; -- Bottom Collision Detection: Keeps within bounds
 
 ;;; reach-bottom-bset:
@@ -529,46 +528,6 @@
                                   (list (make-block 0 0 'pink)
                                         (make-block 0 1 'pink)))
               false)
-
-;;; ---- Line Detection
-
-;;; English: If 10 blocks have the same y coord then the row is full
-;;; How do we test for that?
-
-;;; bset Number -> Number
-;;; How many blocks are in the list with the specified y coord
-(define (how-many bs num)
-  (local [(define (is-at? x) (= (block-y x) num))]
-    (length (filter is-at? bs))))
-
-(check-expect (how-many (list (make-block 1 0 'green)
-                              (make-block 2 0 'green)
-                              (make-block 2 2 'green)) 0)
-              2)
-;;; Bs -> Boolean
-(define (row-full? bs row)
-  (= (how-many bs row) 10))
-(check-expect (row-full? (list (make-block 1 0 'blue)
-                              (make-block 1 0 'blue)
-                              (make-block 1 0 'blue)
-                              (make-block 1 0 'blue)
-                              (make-block 1 0 'blue)
-                              (make-block 1 0 'blue)
-                              (make-block 1 0 'blue)
-                              (make-block 1 0 'blue)
-                              (make-block 1 0 'blue)
-                              (make-block 1 0 'blue) ) 0) true)
-
-;;; run through the pile, if there are 10 y coords that are the same delete it.
-
-
-;;; same-y?
-;;; Block Block -> bO
-
-;;; FILTER (row-full?
-
-
-
 ;;; ---- Post-Collision Detection: What do when the block hits the pile
 
 ;;; add-to-pile:
