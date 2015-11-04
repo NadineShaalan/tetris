@@ -345,6 +345,7 @@
                     (make-block 5 7 'blue)))
               
 ;;; ---- Collision Detection ----
+
 ;;; -- Bottom Collision Detection: Keeps within bounds
 
 ;;; reach-bottom-bset:
@@ -528,6 +529,56 @@
                                   (list (make-block 0 0 'pink)
                                         (make-block 0 1 'pink)))
               false)
+
+;;; ---- Line Detection
+
+;;; English: If 10 blocks have the same y coord then the row is full
+;;; How do we test for that?
+
+;;; bset Number -> Number
+;;; How many blocks are in the list with the specified y coord
+(define (how-many bs num)
+  (local [(define (is-at? x) (= (block-y x) num))]
+    (length (filter is-at? bs))))
+
+(check-expect (how-many (list (make-block 1 0 'green)
+                              (make-block 2 0 'green)
+                              (make-block 2 2 'green)) 0)
+              2)
+;;; Bs -> Boolean
+(define (row-full? bs row)
+  (= (how-many bs row) 10))
+(check-expect (row-full? (list (make-block 1 0 'blue)
+                              (make-block 1 0 'blue)
+                              (make-block 1 0 'blue)
+                              (make-block 1 0 'blue)
+                              (make-block 1 0 'blue)
+                              (make-block 1 0 'blue)
+                              (make-block 1 0 'blue)
+                              (make-block 1 0 'blue)
+                              (make-block 1 0 'blue)
+                              (make-block 1 0 'blue) ) 0) true)
+
+
+
+
+;;; Block Block -> Boolean
+;;; Do these two blocks have the same y coords
+(define (block-same-y? b1 b2)
+  (= (block-y b1) (block-y b2)))
+
+;;;Bset Block -> Boolean
+(define (bset-block-same-y? bs b1)
+  (local [(define (helper x) (block-same-y? x b1)
+  (ormap helper bs))]
+
+
+
+;;; THIS CAN BE DONE USING NEXT-TO FUNCTIONS
+;;; FILTER (row-full?
+
+
+
 ;;; ---- Post-Collision Detection: What do when the block hits the pile
 
 ;;; add-to-pile:
@@ -638,229 +689,9 @@
                                                                                                     (cons (make-block 6 10 'red)empty))))))
                                                      (place-image (text "Game Over" 12 "red") 50 15 (place-image (text "1" 12 "red") 50 40 BACKGROUND)))
 
-
-
 ;;;BIG BANG
 (big-bang  INITIAL-WORLD
           (on-tick next-world .5)
           (to-draw world->scene)
           (on-key key-handler)
           (stop-when at-top-pile? display-score))
-
-;---------------------------------------------------------------------------------------------------------------------------
-;The set of all y coordiantes is one of
-;natural numbers from 0 to 10 in order (list 0 1 2 3 4 5 6 7 8 9)
-(define list-y-coords (list 0 1 2 3 4 5 6 7 8 9))
-
-;A list of BSets is one of
-;--empty
-;(cons BSet empty)
-
-
-;;; Block Block -> Boolean
-;;; Do these two blocks have the same y coords
-(define (block-same-y? b1 b2)
-        (= (block-y b1)
-           (block-y b2)))
-
-(check-expect (block-same-y? (make-block 2 0 'red)
-                             (make-block 3 0  'red)) true)
-
-(check-expect (block-same-y? (make-block 3 1  'red)
-                             (make-block 2 0 'red)) false)
-
-;; BSet Num -> BSet 
-;;If the blocks have the given y-coordinate, then make a list with them
-(check-expect (makey-list (list (make-block 2 0 'red)
-                                (make-block 3 0  'red)
-                                (make-block 5 0 'red)) 0)
-              
-              (list             (make-block 2 0 'red)
-                                (make-block 3 0  'red)
-                                (make-block 5 0 'red)))
-
-(check-expect (makey-list (list (make-block 2 0 'red)
-                                (make-block 3 1  'red)
-                                (make-block 5 2 'red)) 5)
-                          '())
-
-(check-expect (makey-list (list (make-block 2 0 'red)
-                                (make-block 3 0  'red)
-                                (make-block 3 1  'red)) 0)
-              (list             (make-block 2 0 'red)
-                                (make-block 3 0  'red)))
-
-
-(define (makey-list BSet num)
-  ;is the y-coordinate equal to num?
-  (local [(define (y-equality? b) (= (block-y b) num))]
-    (filter y-equality? BSet)))
-
-
-;Set of all y-coordinates, and a BSet  -> List of BSets 
-;Given the set of all y-coordinates, it returns a list of list of blocks in each respective coordinate
-
-(check-expect (split-pile list-y-coords (list (make-block 2 0 'red)
-                                        (make-block 3 0  'red)
-                                        (make-block 5 0 'red)
-                                        (make-block 5 1 'blue)
-                                        (make-block 6 1 'blue)
-                                        (make-block 8 1 'blue)
-                                        (make-block 3 2 'green)
-                                        (make-block 5 2 'green)
-                                        (make-block 7 2 'green)))
-              (list (list (make-block 2 0 'red)
-                          (make-block 3 0 'red)
-                          (make-block 5 0 'red)
-                          )
-                    (list (make-block 5 1 'blue)
-                          (make-block 6 1 'blue)
-                          (make-block 8 1 'blue))
-                    (list (make-block 3 2 'green)
-                          (make-block 5 2 'green)
-                          (make-block 7 2 'green))))
-
-(define (split-pile ys BSet)
-  (local [(define (helper a-y) (makey-list BSet a-y))]                
-     (filter (lambda (x) (not (empty? x))) (map helper ys))))
-
-
-
-
-
-
-;BSet->Boolean
-;is the length of the BSet 10?
-(check-expect (length10? (list          (make-block 2 0 'red)
-                                        (make-block 3 0  'red)
-                                        (make-block 5 0 'red)
-                                        (make-block 5 1 'blue)
-                                        (make-block 6 1 'blue)
-                                        (make-block 8 1 'blue)
-                                        (make-block 3 2 'green)
-                                        (make-block 5 2 'green)
-                                        (make-block 7 2 'green)
-                                        (make-block 9 2 'green))) true)
-(check-expect (length10? '()) false)
-
-
-
-
-                          
-(define (length10? bs)
-  (= 10 (length bs)))
-
-;needs design recipe
-;(define (which10 bs)
-  ;(if (length10? bs) (block-y (first bs))))
-
-
-
-;BSet -> BSet 
-;move all the y coordinates of the blocks in the list of BSet down one grid unit
-(check-expect (move-row        (list (make-block 2 1 'red)
-                                     (make-block 3 1 'red)
-                                     (make-block 5 1 'red)
-                                     ))
-                              
-                              (list (make-block 2 0 'red)
-                                     (make-block 3 0 'red)
-                                     (make-block 5 0 'red)
-                                     ))
-                              
-
-(define (move-row BSet)
-  (local [(define (move-block b)
-                  (make-block (block-x b)
-                          (- (block-y b) 1)
-                             (block-color b)))]
-  (map move-block BSet)))
-
-
-;BSet, num -> BSet
-;if the y-coordinate is greater than the given y-coordinate, then move the BSet down
-;more check-expects please 
-
-(check-expect (compare-move    (list (make-block 3 3 'green)
-                                     (make-block 5 3 'green)
-                                     (make-block 7 3 'green) ) 2)
-              
- 
-                               (list (make-block 3 2 'green)
-                                     (make-block 5 2 'green)
-                                     (make-block 7 2 'green)))
-;is andmap right?
-(define (compare-move Bset y-coord)
-    (if (andmap (lambda (b) (> (block-y b) y-coord)) Bset) (move-row Bset) Bset))
-
-;;need another function that resolves this. if the y-coordinate is greater than the not filtered, then move the BSets down
-;;need a local function within this that extracts the y-coordinates of those filtered to have a length of 10
-;;BSets->BSets
-;;needs check-expects 
-(define (compare-move-BSets BSets)
-  ;;filters the important y-coordinates 
-  (local [(define (important-blocks bs) (filter length10? bs))
-   ;;creates a list of y coordinates from the filtered y-coordinates 
-         (define (extract-ys bs)       (map block-y (important-blocks bs)))]
-   (map (lambda (bs) (compare-move (extract-ys bs))) BSets)))
-;;a stupid error with this but i need an extra set of eyes 
-    
-
-
-
-
-;BSets -> BSets 
-;if the length of the list is 10, then make a new lists with the list with ten removed
-(check-expect (eliminate-row  (list (list (make-block 0 0 'red)
-                                          (make-block 1 0 'red)
-                                          (make-block 2 0 'red)
-                                          (make-block 3 0 'red)
-                                          (make-block 4 0 'red)
-                                          (make-block 5 0 'red)
-                                          (make-block 6 0 'red)
-                                          (make-block 7 0 'red)
-                                          (make-block 8 0 'red)
-                                          (make-block 9 0 'red)
-                                                              )
-                                  (list (make-block 5 1 'red)
-                                        (make-block 6 1 'red)
-                                        (make-block 8 1 'red))
-                                  (list (make-block 3 2 'green)
-                                        (make-block 5 2 'green)
-                                        (make-block 7 2 'green))))
-
-              
-                            (list (list (make-block 5 1 'red)
-                                        (make-block 6 1 'red)
-                                        (make-block 8 1 'red))
-                                  (list (make-block 3 2 'green)
-                                        (make-block 5 2 'green)
-                                        (make-block 7 2 'green))))
-
-
-(define (eliminate-row Bsets)
-  (local [(define (not10? b) (not (length10? b)))]
-  (filter not10? Bsets)))
-
-#|
-the big daddy function--somehow need to implement this  
-;list of BSets -> list of BSets
-;repetitive!
-(define (do-all BSets)
-  (local [(define (do bs) (if (length10? bs) (eliminate-row) ;;and
-                                             (compare-move-BSets)
-                                             ;;else
-                                             BSets))]))
-
-|#
-
-
-;turns the BSets into a pile?
-;do we need this?
-;somehow dismantles the list after list
-;would we use append?
-
-
-
-
-
