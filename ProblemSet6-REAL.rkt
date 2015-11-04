@@ -563,8 +563,19 @@
 
 
 ;;; same-y?
-;;; Block Block -> bO
+;;; Block Block -> Boolean
+;;; Do these two blocks have the same y coords
+(define (block-same-y? b1 b2)
+  (= (block-y b1) (block-y b2)))
 
+;;;Bset Block -> Boolean
+(define (bset-block-same-y? bs b1)
+  (local [(define (helper x) (block-same-y? x b1)
+  (ormap helper bs))]
+
+
+
+;;; THIS CAN BE DONE USING NEXT-TO FUNCTIONS
 ;;; FILTER (row-full?
 
 
