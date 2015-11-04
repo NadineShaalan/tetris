@@ -559,10 +559,9 @@
                               (make-block 1 0 'blue)
                               (make-block 1 0 'blue) ) 0) true)
 
-;;; run through the pile, if there are 10 y coords that are the same delete it.
 
 
-;;; same-y?
+
 ;;; Block Block -> Boolean
 ;;; Do these two blocks have the same y coords
 (define (block-same-y? b1 b2)
