@@ -43,19 +43,19 @@
 
 ;;; ---- Tetra Examples
 
-(define O (make-tetra (make-posn 4 18)
+(define O (make-tetra (make-posn 5 19)
                       (list (make-block 4 19 'green)
                             (make-block 5 19 'green)
                             (make-block 4 18 'green)
                             (make-block 5 18 'green))))
 
-(define I (make-tetra (make-posn 5 19)
+(define I (make-tetra (make-posn 6 20)
                       (list (make-block 4 19 'blue)
                             (make-block 5 19 'blue)
                             (make-block 6 19 'blue)
                             (make-block 7 19 'blue))))
 
-(define L (make-tetra (make-posn 4 18)
+(define L (make-tetra (make-posn 6 18)
                       (list (make-block 6 19 'purple)
                             (make-block 6 18 'purple)
                             (make-block 5 18 'purple)
@@ -566,42 +566,77 @@
 ;;; Returns Bset without full rows
 ;;; Also Moves remaining blocks
 (define (delete-row bs)
-  (local [(define (full-ys bs) (blocks-in-rows bs))
-          ;; does the y coord of the block exist in full-ys
+  (local [;; BSet --> Bset
+          ;; Creates list of y coords that have full rows
+          (define (full-ys bs) (blocks-in-rows bs))
+          ;; Block -> Boolean
+          ;; Should the block stay?
           (define (not-full? block)
             (not (ormap (lambda (fulls) (= (block-y block) fulls)) (full-ys bs))))
-          ;;; Is the block below ALL full rows?
+          (define FILTERED-LIST (filter not-full? bs))
+          ;; Block -> Boolean
+          ;; Is the block below ALL full rows?
           (define (below-ys? block)
             (andmap (lambda (fulls) (< (block-y block) fulls)) (full-ys bs)))
+          ;; Block -> Block
+          ;; Move the block all the way down (until collision)
           (define (move-down block) (if (not (below-ys? block))
                                         (make-block (block-x block)
-                                                    (+ 1 (block-y (find-below block)))
+                                                    (+ 1 (block-y (drop-block block FILTERED-LIST)))  
                                                     (block-color block))
                                         block))] 
-    (map move-down (filter not-full? bs))))
+    (map move-down FILTERED-LIST)))
+
+
+
+
+;;biggest-y
+;;extracts the biggest y value in a set of blocks 
+;;BSet->Number
+
+(define (biggest-y bset)
+  (cond [(empty? bset) -1]
+        [else (local
+                [(define rest-biggest (biggest-y (rest bset)))]
+                (cond
+                  [(> (block-y (first bset)) rest-biggest) (block-y (first bset))]
+                  [else rest-biggest]))]))
+                         
+(check-expect (biggest-y (list (make-block 7 0 'red)
+                               (make-block 7 2 'red)
+                               (make-block 7 3 'red)))
+              3)
+
+(check-expect (biggest-y '()) -1)
 
 ;;; Block Bset -> Block
 ;;; Returns the first block directly below the given block
-#|(define (find-below block bs)
+(define (drop-block block bs)
   (local [;; BSet-> BSet
           ;; Gets all the blocks that have the same x coord as block
-          (define (same-xs bs) (filter (lambda (b) (= (block-x b) (block-x block)) bs)))]
+          (define (same-xs bs) (filter (lambda (b) (= (block-x b) (block-x block))) bs))]
           ;;; Get closest block in pile to block
-          (define (closest bs) (
- (make-block (block-x block) |# 
+    (make-block (block-x block) (biggest-y (same-xs bs)) (block-color block))))
 
 
-  ;;;;;; World -> Boolean
-;;; Has collision occured?
-;;(define (need-post-world? w)
- ;; (or  (tetra-on-pile? w)))
-
-;;(define (tetra-on-pile? w)
-  ;;(bset-on-bset? (tetra-blocks (world-tetra w)) (world-pile w)))
-
-;;;(define (bset-on-bset? bs1 bs2)
- ;; (local [(define (helper x) (block-on-bset? x bs2))]
-  ;;(ormap helper bs1)))
+;;; Checks:
+(check-expect (drop-block (make-block 5 5 'red)
+                           (list (make-block 5 1 'red)
+                                 (make-block 10 0 'red)
+                                 (make-block 9 0 'red)
+                                 (make-block 8 0 'red)
+                                 (make-block 7 0 'red)
+                                 (make-block 6 0 'red)
+                                 (make-block 5 0 'red)
+                                 (make-block 4 0 'red)
+                                 (make-block 3 0 'red)
+                                 (make-block 2 0 'red)
+                                 (make-block 1 0 'red)
+                                 (make-block 2 1 'red)
+                                 (make-block 1 1 'red)
+                                 (make-block 0 1 'red)))
+                           (make-block 5 1 'red))
+                           
 
 ;;;Checks
 (check-expect (delete-row (list (make-block 5 1 'red)
@@ -632,7 +667,7 @@
                     (make-block 2 1 'red)
                     (make-block 1 1 'red)
                     (make-block 0 1 'red))) 
-
+ 
 ;;; ---- Post-Collision Detection: What do when the block hits the pile
 
 ;;; add-to-pile:
@@ -667,7 +702,7 @@
                            (make-world (move-tetra 'down (world-tetra w)) (world-pile w))))
 
 (check-expect (next-world (make-world I (cons (make-block 5 0 'red) (cons (make-block 10 0 'red) empty))))
-              (make-world (make-tetra (make-posn 5 18)
+              (make-world (make-tetra (make-posn 6 19)
                       (list (make-block 4 18 'blue)
                             (make-block 5 18 'blue)
                             (make-block 6 18 'blue)
