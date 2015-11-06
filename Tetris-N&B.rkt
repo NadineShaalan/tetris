@@ -73,13 +73,13 @@
                             (make-block 4 18 'orange)
                             (make-block 6 18 'orange))))
 
-(define Z (make-tetra (make-posn 6 18)
+(define Z (make-tetra (make-posn 6 19)
                       (list (make-block 4 19 'pink)
                             (make-block 5 19 'pink)
                             (make-block 5 18 'pink)
                             (make-block 6 18 'pink))))
 
-(define S (make-tetra (make-posn 6 19)
+(define S (make-tetra (make-posn 5 19)
                       (list (make-block 6 19 'red)
                             (make-block 5 19 'red)
                             (make-block 5 18 'red)
@@ -530,70 +530,61 @@
               false)
 ;;;---------------------------------------------
 (define ROW-LIST (list 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19))
+(define NO-FULL-ROWS (list (make-block 0 0 'pink)
+                           (make-block 1 0 'pink)
+                           (make-block 0 1 'pink)))
+
+(define ONE-FULL-ROW (list (make-block 5 1 'red)
+                           (make-block 10 0 'red)
+                           (make-block 9 0 'red)
+                           (make-block 8 0 'red)
+                           (make-block 7 0 'red)
+                           (make-block 6 0 'red)
+                           (make-block 5 0 'red)
+                           (make-block 4 0 'red)
+                           (make-block 3 0 'red)
+                           (make-block 2 0 'red)
+                           (make-block 1 0 'red)
+                           (make-block 2 1 'red)
+                           (make-block 1 1 'red)
+                           (make-block 0 1 'red)))
+                                                           
 
 ;;;Bset Ys-> List of Numbers (ys)
+;;;Creates a list of the y coords that have full rows.
 (define (blocks-in-rows bs)
-  (local [(define (count-ys y)  (if ( = (length (filter (lambda (b) (= (block-y b) y)) bs)) 10)
+  (local [(define (count-ys y)
+            (if ( = (length (filter (lambda (b) (= (block-y b) y)) bs)) 10)
                                     y
-                                    -1))
+                                   -1))
           (define (full? x) (not (= x -1)))]
     (filter full? (map count-ys ROW-LIST))))
 
 
-
-(check-expect (blocks-in-rows (list (make-block 0 0 'pink)
-                                    (make-block 1 0 'pink)
-                                    (make-block 0 1 'pink))
-                              )
-              '())
-(check-expect (blocks-in-rows (list (make-block 5 1 'red)
-                                    (make-block 10 0 'red)
-                                    (make-block 9 0 'red)
-                                    (make-block 8 0 'red)
-                                    (make-block 7 0 'red)
-                                    (make-block 6 0 'red)
-                                    (make-block 5 0 'red)
-                                    (make-block 4 0 'red)
-                                    (make-block 3 0 'red)
-                                    (make-block 2 0 'red)
-                                    (make-block 1 0 'red)
-                                    (make-block 2 1 'red)
-                                    (make-block 1 1 'red)
-                                    (make-block 0 1 'red)))
+(check-expect (blocks-in-rows NO-FULL-ROWS) '())
+                              
+              
+(check-expect (blocks-in-rows ONE-FULL-ROW)
               (list 0))
 
 ;;; BSet --> BSet
 ;;; Returns Bset without full rows
-;;; Also Moves remaining blocks
+;;; Also moves remaining blocks
 (define (delete-row bs)
-  (local [;; BSet --> Bset
-          ;; Creates list of y coords that have full rows
-          (define (full-ys bs) (blocks-in-rows bs))
-          ;; Block -> Boolean
-          ;; Should the block stay?
-          (define (not-full? block)
-            (not (ormap (lambda (fulls) (= (block-y block) fulls)) (full-ys bs))))
-          (define FILTERED-LIST (filter not-full? bs))
-          ;; Block -> Boolean
-          ;; Is the block below ALL full rows?
-          (define (below-ys? block)
-            (andmap (lambda (fulls) (< (block-y block) fulls)) (full-ys bs)))
-          ;; Block -> Block
-          ;; Move the block all the way down (until collision)
-          (define (move-down block) (if (not (below-ys? block))
-                                        (make-block (block-x block)
-                                                    (+ 1 (block-y (drop-block block FILTERED-LIST)))  
-                                                    (block-color block))
+  (local [(define (full-ys bs) (blocks-in-rows bs))
+          ;; does the y coord of the block exist in full-ys
+          (define (not-full? block) (not (ormap (lambda (fulls) (= (block-y block) fulls)) (full-ys bs))))
+          ;;; Is the block below ALL full rows?
+          (define (below-ys? block) (andmap (lambda (fulls) (< (block-y block) fulls)) (full-ys bs)))
+          (define (move-down block) (if (not (below-ys? block)) (make-block (block-x block)
+                                                                            (- (block-y block) 1)
+                                                                            (block-color block))
                                         block))] 
-    (map move-down FILTERED-LIST)))
-
-
-
+    (map move-down (filter not-full? bs))))
 
 ;;biggest-y
 ;;extracts the biggest y value in a set of blocks 
 ;;BSet->Number
-
 (define (biggest-y bset)
   (cond [(empty? bset) -1]
         [else (local
@@ -615,44 +606,18 @@
   (local [;; BSet-> BSet
           ;; Gets all the blocks that have the same x coord as block
           (define (same-xs bs) (filter (lambda (b) (= (block-x b) (block-x block))) bs))]
-          ;;; Get closest block in pile to block
+    ;;; Get closest block in pile to block
     (make-block (block-x block) (biggest-y (same-xs bs)) (block-color block))))
 
 
 ;;; Checks:
-(check-expect (drop-block (make-block 5 5 'red)
-                           (list (make-block 5 1 'red)
-                                 (make-block 10 0 'red)
-                                 (make-block 9 0 'red)
-                                 (make-block 8 0 'red)
-                                 (make-block 7 0 'red)
-                                 (make-block 6 0 'red)
-                                 (make-block 5 0 'red)
-                                 (make-block 4 0 'red)
-                                 (make-block 3 0 'red)
-                                 (make-block 2 0 'red)
-                                 (make-block 1 0 'red)
-                                 (make-block 2 1 'red)
-                                 (make-block 1 1 'red)
-                                 (make-block 0 1 'red)))
-                           (make-block 5 1 'red))
+;;;THIS CHECK EXPECT IS RIGHT BUT THE CODE IS OFF!! FIX THIS 
+
+(check-expect (drop-block (make-block 5 1 'red) ONE-FULL-ROW) (make-block 5 0 'red))
                            
 
 ;;;Checks
-(check-expect (delete-row (list (make-block 5 1 'red)
-                                (make-block 10 0 'red)
-                                (make-block 9 0 'red)
-                                (make-block 8 0 'red)
-                                (make-block 7 0 'red)
-                                (make-block 6 0 'red)
-                                (make-block 5 0 'red)
-                                (make-block 4 0 'red)
-                                (make-block 3 0 'red)
-                                (make-block 2 0 'red)
-                                (make-block 1 0 'red)
-                                (make-block 2 1 'red)
-                                (make-block 1 1 'red)
-                                (make-block 0 1 'red)))
+(check-expect (delete-row ONE-FULL-ROW)
                           
               (list (make-block 5 0 'red)
                     (make-block 2 0 'red)
