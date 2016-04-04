@@ -1,6 +1,6 @@
 ;; The first three lines of this file were inserted by DrRacket. They record metadata
 ;; about the language level of this file in a form that our tools can easily process.
-#reader(lib "htdp-intermediate-lambda-reader.ss" "lang")((modname Tetris-N&B) (read-case-sensitive #t) (teachpacks ()) (htdp-settings #(#t constructor repeating-decimal #f #t none #f () #f)))
+#reader(lib "htdp-intermediate-lambda-reader.ss" "lang")((modname MASTER) (read-case-sensitive #t) (teachpacks ()) (htdp-settings #(#t constructor repeating-decimal #f #t none #f () #f)))
 #| Problem Set 8
    Authors: Nadine Shaalan and Bahar 
    Emails:  Shaalan.n@husky.neu.edu and 
@@ -184,7 +184,11 @@
 (define (world->scene w)
   (tetra+scene (world-tetra w) 
                 (bset+scene (world-pile w) BACKGROUND))) 
-                              
+
+
+(check-expect (world->scene (make-world I '()))
+              (tetra+scene I (bset+scene '() BACKGROUND)))
+               
 ;;; Number -> Tetra
 ;;; Creates a tetra based off of the number input (assigns a tetra to a number)
 (define (assign-tetra n)
